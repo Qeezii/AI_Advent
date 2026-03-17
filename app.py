@@ -4,7 +4,9 @@ Flask-приложение для работы с YandexGPT API
 
 import os
 import logging
-from flask import Flask, render_template, request, jsonify, stream_with_context
+import json
+import time
+from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -39,32 +41,69 @@ client = OpenAI(
     project=FOLDER_ID
 )
 
-
 def call_yandexgpt(prompt: str, 
                    system_prompt: str = "Ты инженер по имитационному моделированию.",
                    temperature: float = 0.3,
-                   max_tokens: int = 1000) -> str:
+                   max_tokens: int = 1000,
+                   stop_sequences: list[str] | None = None) -> dict:
     """
-    Отправляет запрос в YandexGPT и возвращает текстовый ответ.
+    Отправляет запрос в YandexGPT и возвращает ответ с метаданными.
     
     :param prompt: Текст запроса от пользователя
     :param system_prompt: Системная инструкция для модели
     :param temperature: Креативность ответа (0.0 - 1.0)
     :param max_tokens: Максимальная длина ответа
-    :return: Ответ модели или сообщение об ошибке
+    :param stop_sequences: Стоп-последовательности для остановки генерации
+    :return: Словарь с ответом и метаданными
     """
+    start_time = time.time()
+
     try:
-        response = client.responses.create(
-            model=f"gpt://{FOLDER_ID}/{MODEL}",
-            temperature=temperature,
-            instructions=system_prompt,
-            input=prompt,
-            max_output_tokens=max_tokens
-        )
-        return response.output_text
+        # Формирование сообщения в формате OpenAI-compatible
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ]
+        
+        # Параметры запроса
+        request_params = {
+            "model": f"gpt://{FOLDER_ID}/{MODEL}",
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens
+        }
+
+        # Добавление stop sequences
+        if stop_sequences:
+            request_params["stop"] = stop_sequences
+        
+        response = client.chat.completions.create(**request_params)
+        
+        elapsed_time = time.time() - start_time
+        
+        return {
+            "success": True,
+            "text": response.choices[0].message.content,
+            "usage": {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens
+            },
+            "metadata": {
+                "max_tokens": max_tokens,
+                "stop_sequences": stop_sequences,
+                "temperature": temperature,
+                "time_seconds": round(elapsed_time, 2)
+            }
+        }
     except Exception as e:
         logger.error(f"Ошибка при вызове API: {e}")
-        return f"⚠️ Ошибка соединения с YandexGPT: {type(e).__name__}"
+        return {
+            "success": False,
+            "text": f"⚠️ Ошибка: {type(e).__name__} - {str(e)}",
+            "usage": {},
+            "metadata": {}
+        }
 
 
 # Маршруты веб-интерфейса
@@ -73,10 +112,11 @@ def index():
     """Главная страница с формой чата"""
     return render_template('index.html')
 
-
-@app.route('/api/chat', methods=['POST'])
-def api_chat():
-    """API-эндпоинт для обработки запросов от фронтенда"""
+@app.route('/api/compare', methods=['POST'])
+def api_compare():
+    """
+    API-эндпоинт для сравнения ответов с ограничениями и без
+    """
     data = request.get_json()
     
     if not data or 'message' not in data:
@@ -86,29 +126,49 @@ def api_chat():
     if not prompt:
         return jsonify({'error': 'Сообщение не может быть пустым'}), 400
     
-    # Параметры из запроса или дефолтные
-    temperature = float(data.get('temperature', 0.3))
-    max_tokens = int(data.get('max_tokens', 1000))
-    system_prompt = data.get('system_prompt', 'Ты полезный ассистент.')
-    
     logger.info(f"📩 Запрос от пользователя: {prompt[:100]}...")
     
-    # Вызов модели
-    response_text = call_yandexgpt(
+    # Запрос без ограничений
+    response_no_limits = call_yandexgpt(
         prompt=prompt,
-        system_prompt=system_prompt,
-        temperature=temperature,
-        max_tokens=max_tokens
+        system_prompt="Ты инженер по имитационному моделированию. Отвечай подробно и развернуто.",
+        temperature=0.7,
+        max_tokens=1000,  # Большая длина
+        stop_sequences=None  # Нет стоп-последовательностей
     )
     
-    logger.info(f"📤 Ответ отправлен: {len(response_text)} символов")
+    # Запрос с ограничениями
+    # Добавление явного описания формата в системный промпт
+    format_instruction = """
+    ФОРМАТ ОТВЕТА:
+    - Ответ должен быть кратким (не более 3 предложений)
+    - Используй структуру: 1) Главный вывод 2) Ключевые факты 3) Рекомендация
+    - Заверши ответ словом "END"
+    - Не используй маркеры списка
+    """
+    
+    response_with_limits = call_yandexgpt(
+        prompt=prompt + "\n\n" + format_instruction,
+        system_prompt="Ты инженер по имитационному моделированию. Строго следуй формату ответа.",
+        temperature=0.1,  # Меньше креативности
+        max_tokens=200,   # Ограничение длины
+        stop_sequences=["END", "###", "\n\n\n"]  # Стоп-последовательности
+    )
+    
+    logger.info(f"📤 Ответы отправлены")
     
     return jsonify({
-        'response': response_text,
-        'model': MODEL,
-        'usage': {
-            'prompt_tokens': len(prompt) // 4,  # примерная оценка
-            'completion_tokens': len(response_text) // 4
+        "prompt": prompt,
+        "without_limits": response_no_limits,
+        "with_limits": response_with_limits,
+        "comparison": {
+            "token_difference": (
+                response_no_limits["usage"].get("completion_tokens", 0) - 
+                response_with_limits["usage"].get("completion_tokens", 0)
+            ),
+            "length_difference": (
+                len(response_no_limits["text"]) - len(response_with_limits["text"])
+            )
         }
     })
 

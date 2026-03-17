@@ -3,237 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YandexGPT Chat</title>
+    <title>YandexGPT Chat - Сравнение ответов</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
-        .chat-container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            flex-direction: column;
-            height: 90vh;
-            max-height: 900px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        .chat-header {
-            padding: 20px;
-            background: #667eea;
-            color: white;
-            border-radius: 16px 16px 0 0;
+        h1 {
             text-align: center;
-        }
-        .chat-header h1 { font-size: 1.4rem; margin-bottom: 4px; }
-        .chat-header p { opacity: 0.9; font-size: 0.9rem; }
-        
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .message {
-            max-width: 85%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.5;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.user {
-            align-self: flex-end;
-            background: #667eea;
             color: white;
-            border-bottom-right-radius: 4px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        .message.assistant {
-            align-self: flex-start;
-            background: #f1f3f6;
-            color: #333;
-            border-bottom-left-radius: 4px;
+        .chat-box {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-        .message.error {
-            background: #fee;
-            color: #c00;
-            border: 1px solid #fcc;
+        .input-section {
+            margin-bottom: 25px;
         }
-        
-        .chat-input {
-            padding: 16px 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-            background: #fafafa;
-            border-radius: 0 0 16px 16px;
-        }
-        .chat-input textarea {
-            flex: 1;
-            padding: 12px 16px;
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 24px;
-            font-size: 1rem;
-            resize: none;
-            outline: none;
-            transition: border-color 0.2s;
-            max-height: 120px;
-            font-family: inherit;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
         }
-        .chat-input textarea:focus { border-color: #667eea; }
-        .chat-input button {
-            background: #667eea;
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
-            transition: background 0.2s;
-            white-space: nowrap;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .chat-input button:hover { background: #5568d3; }
-        .chat-input button:disabled {
-            background: #ccc;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            background: #f1f3f6;
-            padding: 12px 16px;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        @media (max-width: 768px) {
+            .results { grid-template-columns: 1fr; }
+        }
+        .response-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 5px solid;
+        }
+        .response-card.no-limits {
+            border-left-color: #28a745;
+        }
+        .response-card.with-limits {
+            border-left-color: #dc3545;
+        }
+        .response-card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .response-text {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        .metadata {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        .metadata span {
+            display: inline-block;
+            margin-right: 15px;
+            background: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+        .comparison-stats {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 25px;
+            text-align: center;
+        }
+        .comparison-stats h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 13px;
             color: #666;
-            font-style: italic;
+            margin-top: 5px;
         }
-        .typing-indicator.active { display: block; }
-        
-        /* Скроллбар */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>🤖 YandexGPT Chat</h1>
-        </div>
+    <div class="container">
+        <h1>🤖 YandexGPT Chat - Сравнение ответов</h1>
         
-        <div class="chat-messages" id="messages">
-            <div class="message assistant">
-                Привет! Чем могу помочь?
+        <div class="chat-box">
+            <div class="input-section">
+                <label for="message" style="display: block; margin-bottom: 10px; font-weight: 600;">
+                    Введите ваш запрос:
+                </label>
+                <textarea 
+                    id="message" 
+                    placeholder="Например: Объясни что такое имитационное моделирование..."
+                ></textarea>
+                <button class="btn" id="sendBtn" onclick="sendRequest()">
+                    🚀 Сравнить ответы
+                </button>
+            </div>
+            
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Отправка запросов в YandexGPT...</p>
+            </div>
+            
+            <div id="results" class="results hidden">
+                <div class="response-card no-limits">
+                    <h3>🟢 Без ограничений</h3>
+                    <div class="response-text" id="responseNoLimits"></div>
+                    <div class="metadata" id="metadataNoLimits"></div>
+                </div>
+                
+                <div class="response-card with-limits">
+                    <h3>🔴 С ограничениями</h3>
+                    <div class="response-text" id="responseWithLimits"></div>
+                    <div class="metadata" id="metadataWithLimits"></div>
+                </div>
+            </div>
+            
+            <div id="comparisonStats" class="comparison-stats hidden">
+                <h3>📊 Сравнение ответов</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="tokenDiff">0</div>
+                        <div class="stat-label">Разница в токенах</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="lengthDiff">0</div>
+                        <div class="stat-label">Разница в символах</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="timeNoLimits">0s</div>
+                        <div class="stat-label">Время (без ограничений)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="timeWithLimits">0s</div>
+                        <div class="stat-label">Время (с ограничениями)</div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="typing-indicator" id="typing">
-            🤔 Думаю...
-        </div>
-        
-        <form class="chat-input" id="chat-form">
-            <textarea 
-                id="user-input" 
-                placeholder="Напишите сообщение..." 
-                rows="1"
-                required
-            ></textarea>
-            <button type="submit" id="send-btn">Отправить</button>
-        </form>
     </div>
-
+    
     <script>
-        const messagesEl = document.getElementById('messages');
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const typingEl = document.getElementById('typing');
-
-        // Авто-высота textarea
-        input.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
-
-        // Отправка по Ctrl+Enter
-        input.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                form.requestSubmit();
+        async function sendRequest() {
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                alert('Введите сообщение!');
+                return;
             }
-        });
-
-        // Обработка отправки формы
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
             
-            const message = input.value.trim();
-            if (!message) return;
-            
-            // Добавляем сообщение пользователя
-            addMessage(message, 'user');
-            input.value = '';
-            input.style.height = 'auto';
-            
-            // Блокируем интерфейс
-            setLoading(true);
+            // Показываем индикатор загрузки
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('comparisonStats').classList.add('hidden');
+            document.getElementById('sendBtn').disabled = true;
             
             try {
-                const response = await fetch('/api/chat', {
+                const response = await fetch('/api/compare', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        temperature: 0.3,
-                        max_tokens: 1000
-                    })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
                 });
                 
                 const data = await response.json();
                 
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка сервера');
+                if (data.error) {
+                    alert('Ошибка: ' + data.error);
+                    return;
                 }
                 
-                // Добавляем ответ ассистента
-                addMessage(data.response, 'assistant');
+                // Отображаем ответы
+                document.getElementById('responseNoLimits').textContent = 
+                    data.without_limits.text || 'Нет ответа';
+                document.getElementById('responseWithLimits').textContent = 
+                    data.with_limits.text || 'Нет ответа';
+                
+                // Метаданные
+                document.getElementById('metadataNoLimits').innerHTML = 
+                    `Токены: ${data.without_limits.usage?.completion_tokens || 0} | 
+                     Время: ${data.without_limits.metadata?.time_seconds || 0}s |
+                     Max tokens: ${data.without_limits.metadata?.max_tokens || 0}`;
+                
+                document.getElementById('metadataWithLimits').innerHTML = 
+                    `Токены: ${data.with_limits.usage?.completion_tokens || 0} | 
+                     Время: ${data.with_limits.metadata?.time_seconds || 0}s |
+                     Max tokens: ${data.with_limits.metadata?.max_tokens || 0} |
+                     Stop: ${JSON.stringify(data.with_limits.metadata?.stop_sequences || [])}`;
+                
+                // Статистика сравнения
+                document.getElementById('tokenDiff').textContent = 
+                    data.comparison?.token_difference || 0;
+                document.getElementById('lengthDiff').textContent = 
+                    data.comparison?.length_difference || 0;
+                document.getElementById('timeNoLimits').textContent = 
+                    (data.without_limits.metadata?.time_seconds || 0) + 's';
+                document.getElementById('timeWithLimits').textContent = 
+                    (data.with_limits.metadata?.time_seconds || 0) + 's';
+                
+                // Показываем результаты
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('comparisonStats').classList.remove('hidden');
                 
             } catch (error) {
-                console.error('Ошибка:', error);
-                addMessage(`❌ ${error.message}`, 'error');
+                alert('Ошибка соединения: ' + error.message);
             } finally {
-                setLoading(false);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+        
+        // Отправка по Ctrl+Enter
+        document.getElementById('message').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                sendRequest();
             }
         });
-
-        function addMessage(text, role) {
-            const msgEl = document.createElement('div');
-            msgEl.className = `message ${role}`;
-            msgEl.textContent = text;
-            messagesEl.appendChild(msgEl);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-        }
-
-        function setLoading(loading) {
-            sendBtn.disabled = loading;
-            input.disabled = loading;
-            typingEl.classList.toggle('active', loading);
-            if (!loading) input.focus();
-        }
-
-        // Фокус на поле ввода при загрузке
-        window.addEventListener('load', () => input.focus());
     </script>
 </body>
 </html>
