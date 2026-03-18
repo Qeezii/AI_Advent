@@ -3,309 +3,421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YandexGPT Chat - Сравнение ответов</title>
+    <title>YandexGPT – сравнение режимов</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* (стили почти без изменений, только небольшие правки) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: white;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .chat-box {
             background: white;
             border-radius: 15px;
-            padding: 25px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
         }
-        .input-section {
-            margin-bottom: 25px;
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
         }
-        textarea {
-            width: 100%;
-            min-height: 100px;
+        .mode-selector {
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .mode-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .mode-option:hover { border-color: #667eea; }
+        .mode-option.active {
+            border-color: #667eea;
+            background: #e8eaf6;
+        }
+        .mode-option input[type="radio"] { display: none; }
+        .mode-indicator {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            border: 2px solid #667eea;
+        }
+        .mode-option.active .mode-indicator { background: #667eea; }
+        .mode-info { font-size: 0.85rem; color: #666; margin-top: 5px; }
+
+        .chat-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .message {
+            margin-bottom: 15px;
             padding: 15px;
-            border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 16px;
-            resize: vertical;
+            max-width: 80%;
+        }
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+        .message.assistant {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .message .mode-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+        .message .mode-badge.restricted { background: #ff9800; }
+        .json-display {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .comparison-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .comparison-card h4 {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+        }
+        .comparison-card.limited h4 { border-bottom-color: #ff9800; }
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
             transition: border-color 0.3s;
         }
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .btn {
+        #messageInput:focus { outline: none; border-color: #667eea; }
+        button {
+            padding: 12px 25px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 1rem;
             cursor: pointer;
-            margin-top: 15px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .btn:hover {
+        button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
         }
-        .btn:disabled {
+        button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
-        .results {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 25px;
+        .compare-btn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
         }
-        @media (max-width: 768px) {
-            .results { grid-template-columns: 1fr; }
-        }
-        .response-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            border-left: 5px solid;
-        }
-        .response-card.no-limits {
-            border-left-color: #28a745;
-        }
-        .response-card.with-limits {
-            border-left-color: #dc3545;
-        }
-        .response-card h3 {
-            margin-bottom: 15px;
+        .compare-btn:hover { box-shadow: 0 5px 20px rgba(255,152,0,0.4); }
+        .status-bar {
+            padding: 10px 20px;
+            background: #e8eaf6;
+            border-top: 1px solid #ddd;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            font-size: 0.85rem;
         }
-        .response-text {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            min-height: 150px;
-            max-height: 400px;
-            overflow-y: auto;
-            line-height: 1.6;
-        }
-        .metadata {
-            margin-top: 15px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
-            font-size: 13px;
-        }
-        .metadata span {
-            display: inline-block;
-            margin-right: 15px;
-            background: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-        }
-        .comparison-stats {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 25px;
+        .status-indicator { display: flex; align-items: center; gap: 8px; }
+        .loading {
+            display: none;
             text-align: center;
+            padding: 20px;
+            color: #667eea;
         }
-        .comparison-stats h3 {
-            color: #856404;
-            margin-bottom: 10px;
+        .loading.active { display: block; }
+        .reset-btn {
+            background: #f44336;
+            padding: 8px 15px;
+            font-size: 0.85rem;
         }
+        .reset-btn:hover { box-shadow: 0 5px 20px rgba(244,67,54,0.4); }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
             margin-top: 15px;
         }
-        .stat-item {
-            background: white;
-            padding: 15px;
+        .stat-card {
+            background: #f5f5f5;
+            padding: 10px;
             border-radius: 8px;
+            text-align: center;
         }
         .stat-value {
-            font-size: 24px;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #667eea;
         }
         .stat-label {
-            font-size: 13px;
+            font-size: 0.75rem;
             color: #666;
             margin-top: 5px;
         }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 YandexGPT Chat - Сравнение ответов</h1>
-        
-        <div class="chat-box">
-            <div class="input-section">
-                <label for="message" style="display: block; margin-bottom: 10px; font-weight: 600;">
-                    Введите ваш запрос:
-                </label>
-                <textarea 
-                    id="message" 
-                    placeholder="Например: Объясни что такое имитационное моделирование..."
-                ></textarea>
-                <button class="btn" id="sendBtn" onclick="sendRequest()">
-                    🚀 Сравнить ответы
-                </button>
-            </div>
-            
-            <div id="loading" class="loading hidden">
-                <div class="spinner"></div>
-                <p>Отправка запросов в YandexGPT...</p>
-            </div>
-            
-            <div id="results" class="results hidden">
-                <div class="response-card no-limits">
-                    <h3>🟢 Без ограничений</h3>
-                    <div class="response-text" id="responseNoLimits"></div>
-                    <div class="metadata" id="metadataNoLimits"></div>
+        <div class="header">
+            <h1>🤖 YandexGPT: диалог + сравнение</h1>
+            <p>Выберите режим и задайте вопрос</p>
+        </div>
+
+        <div class="mode-selector">
+            <label class="mode-option active" onclick="selectMode('unlimited')">
+                <input type="radio" name="mode" value="unlimited" checked>
+                <div class="mode-indicator"></div>
+                <div>
+                    <strong>🟢 Без ограничений</strong>
+                    <div class="mode-info">Подробные ответы</div>
                 </div>
-                
-                <div class="response-card with-limits">
-                    <h3>🔴 С ограничениями</h3>
-                    <div class="response-text" id="responseWithLimits"></div>
-                    <div class="metadata" id="metadataWithLimits"></div>
+            </label>
+            <label class="mode-option" onclick="selectMode('restricted')">
+                <input type="radio" name="mode" value="restricted">
+                <div class="mode-indicator"></div>
+                <div>
+                    <strong>🟠 С ограничениями (диалог + JSON)</strong>
+                    <div class="mode-info">Сбор данных, затем ТЗ</div>
                 </div>
-            </div>
-            
-            <div id="comparisonStats" class="comparison-stats hidden">
-                <h3>📊 Сравнение ответов</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="tokenDiff">0</div>
-                        <div class="stat-label">Разница в токенах</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="lengthDiff">0</div>
-                        <div class="stat-label">Разница в символах</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="timeNoLimits">0s</div>
-                        <div class="stat-label">Время (без ограничений)</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="timeWithLimits">0s</div>
-                        <div class="stat-label">Время (с ограничениями)</div>
-                    </div>
-                </div>
+            </label>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message assistant">
+                <span class="mode-badge">🟢 Без ограничений</span>
+                <strong>🤖 Ассистент:</strong>
+                <p>Здравствуйте! Выберите режим и задайте вопрос.</p>
+                <p><strong>🟢 Без ограничений</strong> — подробный ответ сразу.</p>
+                <p><strong>🟠 С ограничениями</strong> — диалог в JSON, сбор данных, затем ТЗ.</p>
+                <p>Кнопка <strong>Сравнить</strong> покажет ответы на один запрос в двух режимах (без диалога).</p>
             </div>
         </div>
+
+        <div class="loading" id="loading">
+            <p>⏳ Отправка запроса в YandexGPT...</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span id="modeStatus">🟢 Режим: Без ограничений</span>
+            </div>
+            <button class="reset-btn" onclick="resetDialog()">🔄 Сбросить диалог</button>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Введите сообщение..." 
+                   onkeypress="if(event.key==='Enter') sendMessage('chat')">
+            <button onclick="sendMessage('chat')" id="sendBtn">🚀 Отправить</button>
+            <button onclick="sendMessage('compare')" id="compareBtn" class="compare-btn">⚖️ Сравнить</button>
+        </div>
     </div>
-    
+
     <script>
-        async function sendRequest() {
-            const message = document.getElementById('message').value.trim();
-            if (!message) {
-                alert('Введите сообщение!');
-                return;
-            }
-            
-            // Показываем индикатор загрузки
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results').classList.add('hidden');
-            document.getElementById('comparisonStats').classList.add('hidden');
+        let currentMode = 'unlimited';
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            const names = { unlimited: '🟢 Без ограничений', restricted: '🟠 С ограничениями' };
+            document.getElementById('modeStatus').textContent = `Режим: ${names[mode]}`;
+        }
+
+        async function sendMessage(type) {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', `<strong>Вы:</strong> ${message}`);
+            input.value = '';
+
+            document.getElementById('loading').classList.add('active');
             document.getElementById('sendBtn').disabled = true;
-            
+            document.getElementById('compareBtn').disabled = true;
+
             try {
-                const response = await fetch('/api/compare', {
+                const endpoint = type === 'compare' ? '/api/compare' : '/api/chat';
+                const res = await fetch(endpoint, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: message })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, mode: currentMode })
                 });
-                
-                const data = await response.json();
-                
+                const data = await res.json();
+
                 if (data.error) {
-                    alert('Ошибка: ' + data.error);
-                    return;
+                    addMessage('error', `<strong>Ошибка:</strong> ${data.error}`);
+                } else if (type === 'compare') {
+                    addComparisonMessage(data);
+                } else {
+                    addAssistantMessage(data);
                 }
-                
-                // Отображаем ответы
-                document.getElementById('responseNoLimits').textContent = 
-                    data.without_limits.text || 'Нет ответа';
-                document.getElementById('responseWithLimits').textContent = 
-                    data.with_limits.text || 'Нет ответа';
-                
-                // Метаданные
-                document.getElementById('metadataNoLimits').innerHTML = 
-                    `Токены: ${data.without_limits.usage?.completion_tokens || 0} | 
-                     Время: ${data.without_limits.metadata?.time_seconds || 0}s |
-                     Max tokens: ${data.without_limits.metadata?.max_tokens || 0}`;
-                
-                document.getElementById('metadataWithLimits').innerHTML = 
-                    `Токены: ${data.with_limits.usage?.completion_tokens || 0} | 
-                     Время: ${data.with_limits.metadata?.time_seconds || 0}s |
-                     Max tokens: ${data.with_limits.metadata?.max_tokens || 0} |
-                     Stop: ${JSON.stringify(data.with_limits.metadata?.stop_sequences || [])}`;
-                
-                // Статистика сравнения
-                document.getElementById('tokenDiff').textContent = 
-                    data.comparison?.token_difference || 0;
-                document.getElementById('lengthDiff').textContent = 
-                    data.comparison?.length_difference || 0;
-                document.getElementById('timeNoLimits').textContent = 
-                    (data.without_limits.metadata?.time_seconds || 0) + 's';
-                document.getElementById('timeWithLimits').textContent = 
-                    (data.with_limits.metadata?.time_seconds || 0) + 's';
-                
-                // Показываем результаты
-                document.getElementById('results').classList.remove('hidden');
-                document.getElementById('comparisonStats').classList.remove('hidden');
-                
-            } catch (error) {
-                alert('Ошибка соединения: ' + error.message);
+            } catch (err) {
+                addMessage('error', `<strong>Ошибка сети:</strong> ${err.message}`);
             } finally {
-                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('loading').classList.remove('active');
                 document.getElementById('sendBtn').disabled = false;
+                document.getElementById('compareBtn').disabled = false;
             }
         }
-        
-        // Отправка по Ctrl+Enter
-        document.getElementById('message').addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                sendRequest();
+
+        function addMessage(role, html) {
+            const container = document.getElementById('chatContainer');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            msgDiv.innerHTML = html;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addAssistantMessage(data) {
+            const modeBadge = data.mode === 'restricted'
+                ? '<span class="mode-badge restricted">🟠 С ограничениями</span>'
+                : '<span class="mode-badge">🟢 Без ограничений</span>';
+
+            let content = modeBadge + '<strong>🤖 Ассистент:</strong>';
+
+            // Если есть parsed_json и статус, обрабатываем диалог
+            if (data.parsed_json && data.parsed_json.status) {
+                const j = data.parsed_json;
+                if (j.status === 'collecting' && j.question) {
+                    content += `<p>${j.question}</p>`;
+                    if (j.message) content += `<p><em>${j.message}</em></p>`;
+                } else if (j.status === 'complete' && j.final_result) {
+                    content += `<p><strong>✅ Техническое задание готово:</strong></p>`;
+                    if (typeof j.final_result === 'string') {
+                        content += `<p>${j.final_result}</p>`;
+                    } else {
+                        content += `<div class="json-display">${JSON.stringify(j.final_result, null, 2)}</div>`;
+                    }
+                } else {
+                    // запасной вариант
+                    content += `<p>${data.response}</p>`;
+                }
+                // Показываем также raw JSON для отладки (можно убрать)
+                content += `<details><summary>JSON ответа</summary><div class="json-display">${JSON.stringify(j, null, 2)}</div></details>`;
+            } else {
+                // Обычный текст
+                content += `<p>${data.response}</p>`;
+                if (data.parsed_json) {
+                    content += `<div class="json-display">${JSON.stringify(data.parsed_json, null, 2)}</div>`;
+                }
             }
-        });
+
+            // Добавляем статистику
+            content += `<div class="stats-grid" style="margin-top:10px">
+                <div class="stat-card"><span class="stat-value">${data.usage.completion_tokens || 0}</span><div class="stat-label">токенов</div></div>
+                <div class="stat-card"><span class="stat-value">${data.metadata.time_seconds || 0}s</span><div class="stat-label">время</div></div>
+            </div>`;
+
+            addMessage('assistant', content);
+        }
+
+        function addComparisonMessage(data) {
+            const unlimited = data.without_limits;
+            const limited = data.with_limits;
+            const comp = data.comparison;
+
+            const content = `
+                <span class="mode-badge" style="background:#ff9800;">⚖️ Сравнение режимов</span>
+                <strong>🤖 Результаты:</strong>
+                <div class="comparison-container">
+                    <div class="comparison-card">
+                        <h4>🟢 Без ограничений</h4>
+                        <p>${unlimited.text}</p>
+                        <div class="stats-grid">
+                            <div class="stat-card"><span class="stat-value">${unlimited.usage.completion_tokens || 0}</span><div class="stat-label">токенов</div></div>
+                            <div class="stat-card"><span class="stat-value">${unlimited.metadata.time_seconds || 0}s</span><div class="stat-label">время</div></div>
+                        </div>
+                    </div>
+                    <div class="comparison-card limited">
+                        <h4>🟠 С ограничениями</h4>
+                        <p>${limited.text}</p>
+                        <div class="stats-grid">
+                            <div class="stat-card"><span class="stat-value">${limited.usage.completion_tokens || 0}</span><div class="stat-label">токенов</div></div>
+                            <div class="stat-card"><span class="stat-value">${limited.metadata.time_seconds || 0}s</span><div class="stat-label">время</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card"><span class="stat-value">${comp.token_difference}</span><div class="stat-label">разница токенов</div></div>
+                    <div class="stat-card"><span class="stat-value">${comp.length_difference}</span><div class="stat-label">разница символов</div></div>
+                </div>
+            `;
+            addMessage('assistant', content);
+        }
+
+        async function resetDialog() {
+            if (!confirm('Сбросить историю диалога?')) return;
+            try {
+                await fetch('/api/reset', { method: 'POST' });
+                document.getElementById('chatContainer').innerHTML = `
+                    <div class="message assistant">
+                        <span class="mode-badge">🟢 Без ограничений</span>
+                        <strong>🤖 Ассистент:</strong>
+                        <p>Диалог сброшен. Выберите режим и задайте вопрос.</p>
+                    </div>
+                `;
+            } catch (err) {
+                alert('Ошибка при сбросе: ' + err.message);
+            }
+        }
     </script>
 </body>
 </html>

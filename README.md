@@ -1,4 +1,4 @@
 day1:
 ![day1](https://github.com/user-attachments/assets/ca986910-6d06-42cd-8f74-5bd558b5761b)
 day2:
-![day2](https://github.com/user-attachments/assets/c766b997-85c7-40e7-9e6b-15a82888d987)
+![day2](https://github.com/user-attachments/assets/789364a3-fc53-4b31-b962-2ce3d49d5397)
