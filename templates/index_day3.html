@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сравнение методов решения задачи с YandexGPT</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #2b3a67 0%, #1b2a4e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2b3a67 0%, #1b2a4e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .task {
+            background: #e3e9f2;
+            padding: 20px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #1b2a4e;
+        }
+        .controls {
+            padding: 20px;
+            background: #f0f4fa;
+            display: flex;
+            justify-content: center;
+        }
+        button {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #2b3a67 0%, #1b2a4e 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(43,58,103,0.5);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #2b3a67;
+            font-size: 1.2rem;
+        }
+        .loading.active { display: block; }
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        .method-card {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .method-card h3 {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #2b3a67;
+            color: #1b2a4e;
+        }
+        .method-content {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .stats span {
+            background: #e3e9f2;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        .error {
+            color: #c62828;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .generated-prompt {
+            background: #263238;
+            color: #aed581;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Сравнение методов решения задачи с YandexGPT</h1>
+        </div>
+        <div class="task">
+            <strong>Задача:</strong> Как в цифровом двойнике (ЦД) спрогнозировать, что сляб будет транспортироваться медленно и его можно выдавать из печей чуть раньше?
+        </div>
+        <div class="controls">
+            <button id="compareBtn" onclick="runComparison()">🚀 Запустить сравнение 4 методов</button>
+        </div>
+        <div class="loading" id="loading">⏳ Выполняются запросы к YandexGPT (это займёт около минуты)...</div>
+        <div class="results" id="results"></div>
+        <footer>Ответы генерируются в реальном времени, могут отличаться.</footer>
+    </div>
+
+    <script>
+        async function runComparison() {
+            const btn = document.getElementById('compareBtn');
+            btn.disabled = true;
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').innerHTML = '';
+
+            try {
+                const response = await fetch('/api/compare_methods', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+
+                displayResults(data);
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        function displayResults(data) {
+            const container = document.getElementById('results');
+            const methods = [
+                { key: 'direct', title: '1️⃣ Прямой ответ (без инструкций)' },
+                { key: 'step_by_step', title: '2️⃣ Пошаговое решение' },
+                { key: 'generated_prompt', title: '3️⃣ Сгенерированный промпт → решение' },
+                { key: 'expert_panel', title: '4️⃣ Группа экспертов' }
+            ];
+
+            methods.forEach(m => {
+                const result = data[m.key];
+                const card = document.createElement('div');
+                card.className = 'method-card';
+
+                let contentHtml = '';
+                if (!result.success) {
+                    contentHtml = `<div class="error">${result.text}</div>`;
+                } else {
+                    contentHtml = `<div class="method-content">${result.text.replace(/\n/g, '<br>')}</div>`;
+                    if (result.metadata.generated_prompt) {
+                        contentHtml += `<details><summary>📄 Сгенерированный промпт</summary><div class="generated-prompt">${result.metadata.generated_prompt}</div></details>`;
+                    }
+                }
+
+                const stats = result.success ? `
+                    <div class="stats">
+                        <span>📏 ${result.analysis.length} символов</span>
+                        <span>🔤 ${result.usage.completion_tokens || 0} токенов</span>
+                        <span>⏱️ ${result.metadata.time_seconds} с</span>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <h3>${m.title}</h3>
+                    ${contentHtml}
+                    ${stats}
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

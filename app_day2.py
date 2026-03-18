@@ -178,7 +178,7 @@ def call_yandexgpt(prompt: str,
 # === Маршруты ===
 @app.route('/')
 def index():
-    return render_template('index.html', modes=MODES)
+    return render_template('index_day2.html', modes=MODES)
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
