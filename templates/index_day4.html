@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сравнение температуры YandexGPT</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .task {
+            background: #f0f4fa;
+            padding: 20px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ccc;
+        }
+        .controls {
+            padding: 20px;
+            background: #f9f9f9;
+            text-align: center;
+        }
+        button {
+            padding: 12px 30px;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        button:hover {
+            background: #1e3c72;
+            transform: scale(1.02);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+            color: #2a5298;
+        }
+        .results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+        .card {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border-top: 5px solid;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card.temp0 { border-top-color: #4caf50; }
+        .card.temp07 { border-top-color: #ff9800; }
+        .card.temp12 { border-top-color: #f44336; }
+        .card-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .temp-value {
+            background: #ddd;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.9rem;
+        }
+        .card-content {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+            font-size: 0.8rem;
+            color: #555;
+        }
+        .stat {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 800px) {
+            .results { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ Влияние температуры на ответы YandexGPT</h1>
+            <p>Сравнение трёх значений: 0, 0.5, 1</p>
+        </div>
+        <div class="task">
+            <strong>📌 Задача:</strong> Как в цифровом двойнике (ЦД) спрогнозировать, что сляб будет транспортироваться медленно и его можно выдавать из печей чуть раньше?
+        </div>
+        <div class="controls">
+            <button id="runBtn" onclick="runComparison()">🚀 Запустить сравнение</button>
+        </div>
+        <div class="loading" id="loading">⏳ Генерация ответов... (может занять до минуты)</div>
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        async function runComparison() {
+            const btn = document.getElementById('runBtn');
+            const loading = document.getElementById('loading');
+            const resultsDiv = document.getElementById('results');
+            btn.disabled = true;
+            loading.classList.add('active');
+            resultsDiv.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/compare_temperature', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                displayResults(data);
+            } catch (err) {
+                resultsDiv.innerHTML = `<div style="color:red; text-align:center;">Ошибка: ${err.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        function displayResults(data) {
+            const container = document.getElementById('results');
+            const temps = [
+                { key: '0', label: 'Температура = 0', className: 'temp0' },
+                { key: '0.5', label: 'Температура = 0.5', className: 'temp07' },
+                { key: '1', label: 'Температура = 1', className: 'temp12' }
+            ];
+
+            temps.forEach(t => {
+                const res = data[t.key];
+                if (!res) return;
+                const card = document.createElement('div');
+                card.className = `card ${t.className}`;
+                const success = res.success;
+                const text = success ? res.text : res.text;
+                const meta = res.metadata || {};
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>${t.label}</span>
+                        <span class="temp-value">${t.key}</span>
+                    </div>
+                    <div class="card-content">${escapeHtml(text).replace(/\n/g, '<br>')}</div>
+                    <div class="stats">
+                        <span class="stat">📏 Длина: ${meta.length || '?'}</span>
+                        <span class="stat">🔤 Токенов: ${res.usage?.completion_tokens || '?'}</span>
+                        <span class="stat">🕒 Время: ${meta.time_seconds || '?'} с</span>
+                        <span class="stat">🔠 Уникальных слов: ${meta.unique_words || '?'}</span>
+                        <span class="stat">🌿 Разнообразие: ${meta.lexical_diversity || '?'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+    </script>
+</body>
+</html>
